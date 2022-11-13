@@ -80,33 +80,65 @@ where
     }
 
     pub fn test_store(builder: &B) -> Result<(), StorageError<C::NodeId>> {
+        tracing::info!("Starting test suite...");
         run_fut(builder.run_test(Self::last_membership_in_log_initial))?;
+        tracing::info!("[ OK ] last_membership_in_log_initial passed! Running last_membership_in_log..");
         run_fut(builder.run_test(Self::last_membership_in_log))?;
+        tracing::info!("[ OK ] last_membership_in_log passed! Running last_membership_in_log_multi_step..");
         run_fut(builder.run_test(Self::last_membership_in_log_multi_step))?;
+        tracing::info!("[ OK ] last_membership_in_log_multi_step passed! Running get_membership_initial..");
         run_fut(builder.run_test(Self::get_membership_initial))?;
+        tracing::info!("[ OK ] get_membership_initial passed! Running get_membership_from_log_and_empty_sm..");
         run_fut(builder.run_test(Self::get_membership_from_log_and_empty_sm))?;
+        tracing::info!("[ OK ] get_membership_from_log_and_empty_sm passed! Running get_membership_from_log_and_sm..");
         run_fut(builder.run_test(Self::get_membership_from_log_and_sm))?;
+        tracing::info!("[ OK ] get_membership_from_log_and_sm passed! Running get_initial_state_without_init..");
         run_fut(builder.run_test(Self::get_initial_state_without_init))?;
+        tracing::info!(
+            "[ OK ] get_initial_state_without_init passed! Running get_initial_state_membership_from_log_and_sm.."
+        );
         run_fut(builder.run_test(Self::get_initial_state_membership_from_log_and_sm))?;
+        tracing::info!(
+            "[ OK ] get_initial_state_membership_from_log_and_sm passed! Running get_initial_state_with_state.."
+        );
         run_fut(builder.run_test(Self::get_initial_state_with_state))?;
+        tracing::info!("[ OK ] get_initial_state_with_state passed! Running get_initial_state_last_log_gt_sm..");
         run_fut(builder.run_test(Self::get_initial_state_last_log_gt_sm))?;
+        tracing::info!("[ OK ] get_initial_state_last_log_gt_sm passed! Running get_initial_state_last_log_lt_sm..");
         run_fut(builder.run_test(Self::get_initial_state_last_log_lt_sm))?;
+        tracing::info!("[ OK ] get_initial_state_last_log_lt_sm passed! Running get_initial_state_log_ids..");
         run_fut(builder.run_test(Self::get_initial_state_log_ids))?;
+        tracing::info!("[ OK ] get_initial_state_log_ids passed! Running save_vote..");
         run_fut(builder.run_test(Self::save_vote))?;
+        tracing::info!("[ OK ] save_vote passed! Running get_log_entries..");
         run_fut(builder.run_test(Self::get_log_entries))?;
+        tracing::info!("[ OK ] get_log_entries passed! Running try_get_log_entry..");
         run_fut(builder.run_test(Self::try_get_log_entry))?;
+        tracing::info!("[ OK ] try_get_log_entry passed! Running initial_logs..");
         run_fut(builder.run_test(Self::initial_logs))?;
+        tracing::info!("[ OK ] initial_logs passed! Running get_log_state..");
         run_fut(builder.run_test(Self::get_log_state))?;
+        tracing::info!("[ OK ] get_log_state passed! Running get_log_id..");
         run_fut(builder.run_test(Self::get_log_id))?;
+        tracing::info!("[ OK ] get_log_id passed! Running last_id_in_log..");
         run_fut(builder.run_test(Self::last_id_in_log))?;
+        tracing::info!("[ OK ] last_id_in_log passed! Running last_applied_state..");
         run_fut(builder.run_test(Self::last_applied_state))?;
+        tracing::info!("[ OK ] last_applied_state passed! Running purge_logs_upto_0..");
         run_fut(builder.run_test(Self::purge_logs_upto_0))?;
+        tracing::info!("[ OK ] purge_logs_upto_0 passed! Running purge_logs_upto_5..");
         run_fut(builder.run_test(Self::purge_logs_upto_5))?;
+        tracing::info!("[ OK ] purge_logs_upto_5 passed! Running purge_logs_upto_20..");
         run_fut(builder.run_test(Self::purge_logs_upto_20))?;
+        tracing::info!("[ OK ] purge_logs_upto_20 passed! Running delete_logs_since_11..");
         run_fut(builder.run_test(Self::delete_logs_since_11))?;
+        tracing::info!("[ OK ] delete_logs_since_11 passed! Running delete_logs_since_0..");
         run_fut(builder.run_test(Self::delete_logs_since_0))?;
+        tracing::info!("[ OK ] delete_logs_since_0 passed! Running append_to_log..");
         run_fut(builder.run_test(Self::append_to_log))?;
+        tracing::info!("[ OK ] append_to_log passed! Running snapshot_meta..");
         run_fut(builder.run_test(Self::snapshot_meta))?;
+        tracing::info!("[ OK ] snapshot_meta passed!");
 
         // run_fut(Suite::apply_single(builder))?;
         // run_fut(Suite::apply_multi(builder))?;
@@ -142,7 +174,7 @@ where
 
             let mem = StorageHelper::new(&mut store).last_membership_in_log(0).await?;
 
-            assert!(mem.is_empty());
+            assert!(mem.is_empty(), "Membership should be empty.");
         }
 
         tracing::info!("--- membership presents in log, smaller than last_applied, read from log");
@@ -155,17 +187,28 @@ where
                 .await?;
 
             let mem = StorageHelper::new(&mut store).last_membership_in_log(0).await?;
-            assert_eq!(1, mem.len());
+            assert_eq!(1, mem.len(), "Only one membership should be present.");
             let mem = mem[0].clone();
-            assert_eq!(Membership::new(vec![btreeset! {1, 2, 3}], None), mem.membership,);
+            assert_eq!(
+                Membership::new(vec![btreeset! {1, 2, 3}], None),
+                mem.membership,
+                "Membership set in logs (left) should match returned membership (right)"
+            );
 
             let mem = StorageHelper::new(&mut store).last_membership_in_log(1).await?;
-            assert_eq!(1, mem.len());
+            assert_eq!(1, mem.len(), "Only one membership should be present.");
             let mem = mem[0].clone();
-            assert_eq!(Membership::new(vec![btreeset! {1, 2, 3}], None), mem.membership,);
+            assert_eq!(
+                Membership::new(vec![btreeset! {1, 2, 3}], None),
+                mem.membership,
+                "Membership set in logs (left) should match returned membership (right)"
+            );
 
             let mem = StorageHelper::new(&mut store).last_membership_in_log(2).await?;
-            assert!(mem.is_empty());
+            assert!(
+                mem.is_empty(),
+                "Membership should be empty as no membership updates have taken place since the given index."
+            );
         }
 
         tracing::info!("--- membership presents in log and > sm.last_applied, read 2 membership entries from log");
@@ -188,19 +231,30 @@ where
                 .await?;
 
             let mems = StorageHelper::new(&mut store).last_membership_in_log(0).await?;
-            assert_eq!(2, mems.len());
+            assert_eq!(2, mems.len(), "2 memberships should be present as two membership changes have been appended to logs since the given index.");
 
             let mem = mems[0].clone();
-            assert_eq!(Membership::new(vec![btreeset! {1,2,3}], None), mem.membership,);
+            assert_eq!(
+                Membership::new(vec![btreeset! {1,2,3}], None),
+                mem.membership,
+                "First membership set in logs (left) should match returned membership (right)"
+            );
 
             let mem = mems[1].clone();
-            assert_eq!(Membership::new(vec![btreeset! {7,8,9}], None), mem.membership,);
+            assert_eq!(
+                Membership::new(vec![btreeset! {7,8,9}], None),
+                mem.membership,
+                "Second membership set in logs (left) should match returned membership (right)"
+            );
         }
 
         tracing::info!("--- membership presents in log and > sm.last_applied, read from log but since_index is greater than the last");
         {
             let mem = StorageHelper::new(&mut store).last_membership_in_log(4).await?;
-            assert!(mem.is_empty());
+            assert!(
+                mem.is_empty(),
+                "Membership should be empty as no membership updates have taken place since the given index."
+            );
         }
 
         tracing::info!("--- 3 memberships in log, only return the last 2 of them");
@@ -213,13 +267,21 @@ where
                 .await?;
 
             let mems = StorageHelper::new(&mut store).last_membership_in_log(0).await?;
-            assert_eq!(2, mems.len());
+            assert_eq!(2, mems.len(), "2 memberships should be present as two membership changes have been appended to logs since the given index.");
 
             let mem = mems[0].clone();
-            assert_eq!(Membership::new(vec![btreeset! {7,8,9}], None), mem.membership,);
+            assert_eq!(
+                Membership::new(vec![btreeset! {7,8,9}], None),
+                mem.membership,
+                "First membership set in logs (left) should match returned membership (right)"
+            );
 
             let mem = mems[1].clone();
-            assert_eq!(Membership::new(vec![btreeset! {10,11}], None), mem.membership,);
+            assert_eq!(
+                Membership::new(vec![btreeset! {10,11}], None),
+                mem.membership,
+                "Second membership set in logs (left) should match returned membership (right)"
+            );
         }
 
         Ok(())
@@ -254,12 +316,20 @@ where
                 .await?;
 
             let mems = StorageHelper::new(&mut store).last_membership_in_log(0).await?;
-            assert_eq!(2, mems.len());
+            assert_eq!(2, mems.len(), "2 memberships should be present as two membership changes have been appended to logs since the given index.");
             let mem = mems[0].clone();
-            assert_eq!(Membership::new(vec![btreeset! {3,4,5}], None), mem.membership,);
+            assert_eq!(
+                Membership::new(vec![btreeset! {3,4,5}], None),
+                mem.membership,
+                "First membership set in logs (left) should match returned membership (right)"
+            );
 
             let mem = mems[1].clone();
-            assert_eq!(Membership::new(vec![btreeset! {5,6,7}], None), mem.membership,);
+            assert_eq!(
+                Membership::new(vec![btreeset! {5,6,7}], None),
+                mem.membership,
+                "Second membership set in logs (left) should match returned membership (right)"
+            );
         }
 
         Ok(())
@@ -268,8 +338,16 @@ where
     pub async fn get_membership_initial(mut store: S) -> Result<(), StorageError<C::NodeId>> {
         let mem_state = StorageHelper::new(&mut store).get_membership().await?;
 
-        assert_eq!(&EffectiveMembership::default(), mem_state.committed.as_ref());
-        assert_eq!(&EffectiveMembership::default(), mem_state.effective.as_ref());
+        assert_eq!(
+            &EffectiveMembership::default(),
+            mem_state.committed.as_ref(),
+            "Committed membership should match left."
+        );
+        assert_eq!(
+            &EffectiveMembership::default(),
+            mem_state.effective.as_ref(),
+            "Effective membership should match left."
+        );
 
         Ok(())
     }
@@ -288,10 +366,15 @@ where
 
             let mem_state = StorageHelper::new(&mut store).get_membership().await?;
 
-            assert_eq!(&EffectiveMembership::default(), mem_state.committed.as_ref());
+            assert_eq!(
+                &EffectiveMembership::default(),
+                mem_state.committed.as_ref(),
+                "Committed membership should match left."
+            );
             assert_eq!(
                 Membership::new(vec![btreeset! {1,2,3}], None),
                 mem_state.effective.membership,
+                "Effective membership should match left."
             );
         }
 
@@ -319,10 +402,12 @@ where
             assert_eq!(
                 Membership::new(vec![btreeset! {3,4,5}], None),
                 mem_state.committed.membership,
+                "Committed membership should match left."
             );
             assert_eq!(
                 Membership::new(vec![btreeset! {3,4,5}], None),
                 mem_state.effective.membership,
+                "Effective membership should match left."
             );
         }
 
@@ -340,10 +425,12 @@ where
             assert_eq!(
                 Membership::new(vec![btreeset! {3,4,5}], None),
                 mem_state.committed.membership,
+                "Committed membership should match left."
             );
             assert_eq!(
                 Membership::new(vec![btreeset! {3,4,5}], None),
                 mem_state.effective.membership,
+                "Effective membership should match left."
             );
         }
 
@@ -367,10 +454,12 @@ where
             assert_eq!(
                 Membership::new(vec![btreeset! {3,4,5}], None),
                 mem_state.committed.membership,
+                "Committed membership should match left."
             );
             assert_eq!(
                 Membership::new(vec![btreeset! {7,8,9}], None),
                 mem_state.effective.membership,
+                "Effective membership should match left."
             );
         }
 
@@ -394,10 +483,12 @@ where
             assert_eq!(
                 Membership::new(vec![btreeset! {7,8,9}], None),
                 mem_state.committed.membership,
+                "Committed membership should match left."
             );
             assert_eq!(
                 Membership::new(vec![btreeset! {10,11}], None),
                 mem_state.effective.membership,
+                "Effective membership should match left."
             );
         }
 
@@ -478,6 +569,7 @@ where
             assert_eq!(
                 Membership::new(vec![btreeset! {3,4,5}], None),
                 initial.membership_state.effective.membership,
+                "Effective membership should match left."
             );
         }
 
@@ -495,6 +587,7 @@ where
             assert_eq!(
                 Membership::new(vec![btreeset! {3,4,5}], None),
                 initial.membership_state.effective.membership,
+                "Effective membership should match left."
             );
         }
 
@@ -512,6 +605,7 @@ where
             assert_eq!(
                 Membership::new(vec![btreeset! {1,2,3}], None),
                 initial.membership_state.effective.membership,
+                "Effective membership should match left."
             );
         }
 
